@@ -708,7 +708,7 @@ async function analyzePhotoAI(base64, apiKey) {
 {"name":"nome curto e atraente","description":"descrição de 1-2 frases: cor, estilo, material","category":"Vestido|Calça|Camisa|Saia|Jaqueta|Acessório|Sapato|Bolsa|Outro","size":"tamanho estimado ou vazio","condition":"Novo|Seminovo|Bom|Regular","summary":"frase curta do que a IA identificou"}`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -800,7 +800,7 @@ async function parseClientVoice(text) {
   }
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
