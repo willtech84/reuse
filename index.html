@@ -519,13 +519,32 @@
         <p style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px;">📱 Voz no Android</p>
         <p style="font-size:11px;opacity:.6;line-height:1.5;">O reconhecimento de voz só funciona em HTTPS. Para usar offline, abra o arquivo via servidor local ou deploy no Cloudflare Workers.</p>
       </div>
+      <div class="field">
+        <label>WhatsApp da Loja (para catálogo público)</label>
+        <input id="cfgWhatsapp" type="tel" placeholder="47999999999">
+      </div>
       <div style="padding:12px;border-radius:12px;background:var(--bg);">
-        <p style="font-size:11px;font-weight:600;margin-bottom:4px;">💾 Dados</p>
+        <p style="font-size:11px;font-weight:600;margin-bottom:4px;">📤 Catálogo Público</p>
+        <p style="font-size:11px;opacity:.6;margin-bottom:10px;line-height:1.5;">Gera um arquivo HTML com as peças disponíveis. Clientes veem só o catálogo — sem acesso às ferramentas do app.</p>
+        <button class="btn btn-secondary btn-sm" onclick="exportPublicCatalog()">Gerar Catálogo Público</button>
+      </div>
+      <div style="padding:12px;border-radius:12px;background:var(--bg);">
+        <p style="font-size:11px;font-weight:600;margin-bottom:4px;">💾 Backup</p>
         <p style="font-size:11px;opacity:.6;margin-bottom:10px;line-height:1.5;"><span id="dataCount">0</span> peças salvas no dispositivo.</p>
         <button class="btn btn-secondary btn-sm" onclick="exportData()">Exportar JSON</button>
       </div>
       <button class="btn btn-primary" onclick="saveSettings()">Salvar Configurações</button>
     </div>
+  </div>
+</div>
+
+<!-- ── ERROR DIALOG ── -->
+<div class="dialog-backdrop" id="errorDialog">
+  <div class="dialog">
+    <div style="font-size:28px;margin-bottom:8px;">⚠️</div>
+    <p style="font-weight:700;margin-bottom:8px;" id="errorTitle">Erro</p>
+    <p style="font-size:12px;line-height:1.6;opacity:.7;margin-bottom:20px;" id="errorMsg"></p>
+    <button class="btn btn-primary" onclick="closeError()">OK, entendi</button>
   </div>
 </div>
 
@@ -654,7 +673,7 @@ async function handlePhoto(e) {
       }
     } catch(err) {
       document.getElementById('aiOverlay').classList.remove('show');
-      toast('Erro na IA: ' + (err.message || 'verifique a chave API'));
+      showError('Erro na IA', err.message || 'Erro desconhecido. Verifique se a chave Gemini está correta em ⚙️ Configurações.');
     }
   };
   reader.readAsDataURL(file);
@@ -945,10 +964,7 @@ function renderCatalog() {
           ${badge}
         </div>
         <p class="catalog-card-sub">${item.category} · ${item.size || '-'}</p>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;">
-          <p class="catalog-card-price">R$ ${fmt(item.sale_price||0)}</p>
-          ${item.price !== item.sale_price && item.price > 0 ? `<p class="catalog-card-original">R$ ${fmt(item.price)}</p>` : ''}
-        </div>
+        <p class="catalog-card-price" style="margin-top:4px;">R$ ${fmt(item.sale_price||0)}</p>
       </div>`;
     grid.appendChild(card);
   });
@@ -1223,6 +1239,7 @@ function removeCustomAlert(text) {
 function openSettings() {
   document.getElementById('cfgStoreName').value = CFG.storeName || 'Meu Brechó';
   document.getElementById('cfgApiKey').value = CFG.apiKey || '';
+  document.getElementById('cfgWhatsapp').value = CFG.whatsapp || '';
   document.getElementById('dataCount').textContent = DB.length;
   document.getElementById('settingsModal').classList.add('show');
 }
@@ -1231,6 +1248,7 @@ function closeSettings() { document.getElementById('settingsModal').classList.re
 function saveSettings() {
   CFG.storeName = document.getElementById('cfgStoreName').value.trim() || 'Meu Brechó';
   CFG.apiKey = document.getElementById('cfgApiKey').value.trim();
+  CFG.whatsapp = document.getElementById('cfgWhatsapp').value.trim();
   localStorage.setItem('brecho_cfg', JSON.stringify(CFG));
   applyConfig();
   closeSettings();
@@ -1244,6 +1262,75 @@ function exportData() {
   a.href = url; a.download = 'brecho_backup.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function showError(title, msg) {
+  const d = document.getElementById('errorDialog');
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').textContent = msg;
+  d.classList.add('show');
+}
+function closeError() { document.getElementById('errorDialog').classList.remove('show'); }
+
+function exportPublicCatalog() {
+  const storeName = CFG.storeName || 'Meu Brechó';
+  const waNum = (CFG.whatsapp || '').replace(/\D/g,'');
+  const items = DB.filter(i => i.status === 'disponível');
+
+  const cards = items.map(item => {
+    const thumb = item.photo
+      ? `<div style="height:180px;overflow:hidden;border-radius:16px 16px 0 0;"><img src="${item.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`
+      : `<div style="height:180px;border-radius:16px 16px 0 0;background:linear-gradient(135deg,#F5F0EB,#EDE8E1);display:flex;align-items:center;justify-content:center;font-size:60px;">${catEmoji(item.category)}</div>`;
+    const waLink = waNum
+      ? `<a href="https://wa.me/55${waNum}?text=${encodeURIComponent('Olá! Tenho interesse na peça: ' + item.name)}" style="display:block;text-align:center;margin-top:10px;padding:10px;border-radius:12px;background:#25D366;color:#fff;text-decoration:none;font-size:13px;font-weight:600;">💬 Tenho interesse</a>`
+      : '';
+    return `<div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);">
+      ${thumb}
+      <div style="padding:12px;">
+        <p style="font-size:13px;font-weight:600;margin-bottom:2px;">${item.name}</p>
+        <p style="font-size:11px;opacity:.5;margin-bottom:6px;">${item.category}${item.size?' · '+item.size:''} · ${item.condition}</p>
+        ${item.description ? `<p style="font-size:11px;opacity:.6;margin-bottom:6px;line-height:1.5;">${item.description}</p>` : ''}
+        <p style="font-size:18px;font-weight:700;color:#B8541A;font-family:Georgia,serif;">R$ ${fmt(item.sale_price||0)}</p>
+        ${waLink}
+      </div>
+    </div>`;
+  }).join('');
+
+  const publicHtml = `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>${storeName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#F5F0EB;color:#1C1916;min-height:100vh;}
+    header{padding:24px 16px 12px;text-align:center;background:#fff;border-bottom:1px solid rgba(0,0,0,.06);}
+    h1{font-family:'Cormorant Garamond',serif;font-size:32px;color:#B8541A;}
+    .subtitle{font-size:12px;opacity:.5;margin-top:4px;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:16px;}
+    .empty{text-align:center;padding:60px 16px;opacity:.4;}
+    footer{text-align:center;padding:20px;font-size:11px;opacity:.4;}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${storeName}</h1>
+    <p class="subtitle">Peças disponíveis · ${items.length} ite${items.length===1?'m':'ns'}</p>
+  </header>
+  <div class="grid">${items.length > 0 ? cards : '<p class="empty">Nenhuma peça disponível no momento.</p>'}</div>
+  <footer>Catálogo gerado em ${new Date().toLocaleDateString('pt-BR')}</footer>
+</body>
+</html>`;
+
+  const blob = new Blob([publicHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'catalogo_publico.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📤 Catálogo público gerado!');
 }
 
 // ═══════════════════════════════════════════════
