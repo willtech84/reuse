@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Meu Brechó</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F5F0EB;
+      --surface: #FFFFFF;
+      --text: #1C1916;
+      --primary: #B8541A;
+      --secondary: #7A6550;
+      --danger: #DC2626;
+      --success: #16A34A;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); }
+    body { font-family: 'DM Sans', sans-serif; font-size: 14px; overflow: hidden; }
+    .font-display { font-family: 'Cormorant Garamond', serif; }
+
+    /* Layout */
+    #app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; position: relative; }
+    header { padding: 18px 16px 8px; display: flex; align-items: center; justify-content: space-between; background: var(--bg); flex-shrink: 0; }
+    nav { padding: 4px 16px 8px; display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+    nav::-webkit-scrollbar { display: none; }
+    main { flex: 1; overflow-y: auto; padding: 0 16px 80px; }
+    main::-webkit-scrollbar { width: 3px; }
+    main::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
+
+    /* Tab buttons */
+    .tab-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; border: none; cursor: pointer; transition: all .15s; background: transparent; color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+
+    /* Cards & Surfaces */
+    .card { background: var(--surface); border-radius: 20px; padding: 16px; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Form fields */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 10px; font-weight: 600; opacity: .55; letter-spacing: .05em; text-transform: uppercase; }
+    .field input, .field select, .field textarea {
+      background: var(--bg); border: none; outline: none;
+      padding: 10px 12px; border-radius: 12px; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; width: 100%;
+      transition: box-shadow .15s; color: var(--text);
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      box-shadow: 0 0 0 2px rgba(184,84,26,.25);
+    }
+    .field textarea { resize: none; }
+    .field input[readonly] { opacity: .7; }
+
+    /* Category chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--bg); border: 1.5px solid transparent; cursor: pointer; transition: all .15s; user-select: none; }
+    .chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Buttons */
+    .btn { padding: 12px 20px; border-radius: 14px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 13px; transition: all .15s; width: 100%; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:disabled { opacity: .6; }
+    .btn-secondary { background: var(--bg); color: var(--text); }
+    .btn-ghost { background: transparent; color: var(--text); width: auto; padding: 8px; }
+    .btn-sm { padding: 7px 14px; border-radius: 12px; font-size: 12px; width: auto; }
+
+    /* Price pill */
+    .price-pill { display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 24px; background: linear-gradient(135deg, var(--primary), #D96830); color: #fff; font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; }
+
+    /* Photo area */
+    #photoArea { width: 100%; height: 180px; border-radius: 16px; border: 2px dashed var(--secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; opacity: .65; transition: opacity .2s; background: var(--bg); }
+    #photoArea.has-photo { border-color: transparent; opacity: 1; }
+    #photoArea img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    #photoArea .photo-label { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--secondary); }
+    #photoArea .photo-label svg { width: 28px; height: 28px; }
+    #photoArea .photo-label span { font-size: 12px; font-weight: 500; }
+    #photoArea .photo-label small { font-size: 10px; opacity: .7; }
+
+    /* AI overlay */
+    #aiOverlay { display: none; position: absolute; inset: 0; background: rgba(245,240,235,.92); align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
+    #aiOverlay.show { display: flex; }
+    .spinner { width: 28px; height: 28px; border: 2.5px solid rgba(184,84,26,.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* AI result bar */
+    #aiResultBar { display: none; margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(184,84,26,.08); color: var(--primary); font-size: 12px; font-weight: 500; }
+    #aiResultBar.show { display: flex; align-items: center; gap: 6px; }
+
+    /* Voice button */
+    .voice-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 14px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; width: 100%; background: var(--bg); color: var(--text); transition: all .15s; }
+    .voice-btn.recording { background: var(--primary); color: #fff; }
+    .voice-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .wave { display: flex; align-items: center; gap: 2px; height: 18px; }
+    .wave span { width: 3px; background: currentColor; border-radius: 2px; animation: wave .7s ease-in-out infinite; }
+    .wave span:nth-child(2) { animation-delay: .1s; }
+    .wave span:nth-child(3) { animation-delay: .2s; }
+    .wave span:nth-child(4) { animation-delay: .3s; }
+    .wave span:nth-child(5) { animation-delay: .4s; }
+    @keyframes wave { 0%,100%{height:4px} 50%{height:16px} }
+
+    /* Catalog grid */
+    .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .catalog-card { background: var(--surface); border-radius: 18px; overflow: hidden; cursor: pointer; transition: transform .15s; }
+    .catalog-card:active { transform: scale(.97); }
+    .catalog-card-thumb { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 42px; background: linear-gradient(135deg, var(--bg), #EDE8E1); position: relative; }
+    .catalog-card-body { padding: 10px; }
+    .catalog-card-name { font-size: 12px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .catalog-card-sub { font-size: 10px; opacity: .45; margin-top: 2px; }
+    .catalog-card-price { font-size: 14px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+    .catalog-card-original { font-size: 10px; opacity: .4; text-decoration: line-through; }
+
+    /* Badge */
+    .badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    .badge-warn { background: #FEF3C7; color: #92400E; }
+    .badge-danger { background: #FEE2E2; color: #991B1B; }
+    .badge-success { background: #D1FAE5; color: #065F46; }
+    .badge-info { background: #DBEAFE; color: #1E40AF; }
+    .pct-badge { position: absolute; bottom: 6px; right: 6px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; background: rgba(184,84,26,.12); color: var(--primary); }
+
+    /* Pricing box */
+    .pricing-box { background: var(--bg); border-radius: 16px; padding: 14px; }
+    .pricing-breakdown { font-size: 11px; opacity: .5; }
+    .pct-wrap { position: relative; }
+    .pct-wrap input { padding-right: 26px; }
+    .pct-sym { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: .5; pointer-events: none; }
+
+    /* Modal */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; }
+    .modal-backdrop.show { display: flex; align-items: flex-end; justify-content: center; }
+    .modal-sheet { background: var(--surface); border-radius: 24px 24px 0 0; padding: 20px 16px 32px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    /* Confirm dialog */
+    .dialog-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+    .dialog-backdrop.show { display: flex; }
+    .dialog { background: var(--surface); border-radius: 20px; padding: 24px; width: 100%; max-width: 320px; text-align: center; }
+
+    /* Alerts */
+    .alert-item { padding: 12px; border-radius: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .alert-item svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-item span { font-size: 12px; font-weight: 500; line-height: 1.4; }
+    .alert-item button { font-size: 11px; opacity: .6; background: none; border: none; cursor: pointer; white-space: nowrap; }
+
+    /* Billing summary */
+    #billingSummary { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--primary); color: #fff; padding: 14px 16px; z-index: 10; }
+
+    /* Client avatar */
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+
+    /* Settings */
+    #settingsBtn { background: var(--surface); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    #settingsBtn svg { width: 18px; height: 18px; }
+
+    /* API key area */
+    .api-key-input { background: var(--bg); border: none; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-family: monospace; width: 100%; outline: none; color: var(--text); }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 24px; font-size: 13px; font-weight: 600; white-space: nowrap; z-index: 300; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+
+    /* Animations */
+    .fade-in { animation: fadeIn .25s ease-out; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .slide-in { animation: slideIn .3s ease-out; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    /* Empty state */
+    .empty { display: flex; flex-direction: column; align-items: center; padding: 60px 16px; opacity: .4; gap: 8px; }
+    .empty svg { width: 48px; height: 48px; }
+    .empty p { font-size: 13px; }
+
+    /* AI badge */
+    .ai-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(184,84,26,.1); color: var(--primary); font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: .04em; }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid rgba(0,0,0,.06); margin: 10px 0; }
+
+    /* ai filled highlight */
+    .ai-filled { border-left: 2px solid var(--primary) !important; }
+
+    /* Grain overlay */
+    body::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.02; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:180px; }
+    #app { position:relative; z-index:1; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div>
+      <h1 class="font-display" style="font-size:28px;font-weight:700;color:var(--primary);line-height:1;">Meu Brechó</h1>
+      <p style="font-size:11px;opacity:.45;margin-top:2px;">Bem-vindo ao nosso brechó!</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="alertBtn" onclick="showTab('alerts')" style="position:relative;background:var(--surface);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="alertBadge" style="display:none;position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:var(--primary);border-radius:50%;color:#fff;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;" id="alertBadge"></span>
+      </button>
+      <button id="settingsBtn" onclick="openSettings()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <button class="tab-btn active" data-tab="catalog" onclick="showTab('catalog')">Catálogo</button>
+    <button class="tab-btn" data-tab="register" onclick="showTab('register')">+ Peça</button>
+    <button class="tab-btn" data-tab="clients" onclick="showTab('clients')">Clientes</button>
+    <button class="tab-btn" data-tab="billing" onclick="showTab('billing')">Faturamento</button>
+    <button class="tab-btn" data-tab="alerts" onclick="showTab('alerts')">Avisos</button>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- CATALOG -->
+    <section id="tab-catalog" class="fade-in">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;position:relative;">
+          <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;opacity:.35;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" oninput="renderCatalog()" type="text" placeholder="Buscar peça..." style="width:100%;padding:10px 10px 10px 32px;border-radius:12px;border:none;outline:none;background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);">
+        </div>
+        <select id="filterCat" onchange="renderCatalog()" style="padding:8px 10px;border-radius:12px;border:none;outline:none;background:var(--surface);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);">
+          <option value="">Todas</option>
+          <option>Vestido</option><option>Calça</option><option>Camisa</option><option>Saia</option>
+          <option>Jaqueta</option><option>Acessório</option><option>Sapato</option><option>Bolsa</option><option>Outro</option>
+        </select>
+      </div>
+      <div id="catalogGrid" class="catalog-grid"></div>
+      <div id="catalogEmpty" class="empty" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H5v10a2 2 0 002 2h10a2 2 0 002-2V10h1.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/></svg>
+        <p>Nenhuma peça cadastrada</p>
+        <button onclick="showTab('register')" style="font-size:12px;color:var(--primary);background:none;border:none;cursor:pointer;text-decoration:underline;">Cadastrar primeira peça</button>
+      </div>
+    </section>
+
+    <!-- REGISTER -->
+    <section id="tab-register" style="display:none;" class="fade-in">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h2 class="font-display" style="font-size:22px;font-weight:700;">Nova Peça</h2>
+          <span class="ai-badge">✦ IA</span>
+        </div>
+
+        <!-- PHOTO -->
+        <div style="margin-bottom:16px;">
+          <div class="field" style="margin-bottom:8px;"><label>Foto da Peça</label></div>
+          <div id="photoArea" onclick="document.getElementById('photoInput').click()">
+            <img id="photoPreview" style="display:none;">
+            <div class="photo-label" id="photoLabel">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Tirar ou escolher foto</span>
+              <small>A IA identifica a peça automaticamente</small>
+            </div>
+            <div id="aiOverlay">
+              <div class="spinner"></div>
+              <p style="font-size:12px;font-weight:600;color:var(--primary);">✦ IA analisando...</p>
+              <p style="font-size:10px;opacity:.6;">Identificando categoria, estado...</p>
+            </div>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhoto(event)">
+          <div id="aiResultBar">
+            <span>✦</span>
+            <span id="aiResultText"></span>
+          </div>
+        </div>
+
+        <!-- VOICE -->
+        <div style="margin-bottom:16px;">
+          <div class="field" style="margin-bottom:8px;"><label>Descrição por Voz</label></div>
+          <button id="voicePieceBtn" class="voice-btn" onclick="toggleVoice('piece')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span id="voicePieceLabel">Gravar descrição da peça</span>
+            <div class="wave" id="voicePieceWave" style="display:none;">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </button>
+          <div id="voicePieceResult" style="display:none;font-size:11px;margin-top:6px;padding:8px 12px;border-radius:10px;background:var(--bg);font-style:italic;opacity:.7;"></div>
+        </div>
+
+        <!-- FIELDS -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="field">
+            <label>Nome da Peça</label>
+            <input id="regName" type="text" placeholder="Ex: Vestido Floral Midi">
+          </div>
+          <div class="field">
+            <label>Descrição</label>
+            <textarea id="regDesc" rows="2" placeholder="Detalhes, cor, estilo..."></textarea>
+          </div>
+          <div class="field">
+            <label>Categoria</label>
+            <div class="chips" style="margin-top:4px;" id="catChips">
+              <span class="chip on" data-v="Vestido" onclick="selectCat(this)">👗 Vestido</span>
+              <span class="chip" data-v="Calça"   onclick="selectCat(this)">👖 Calça</span>
+              <span class="chip" data-v="Camisa"  onclick="selectCat(this)">👔 Camisa</span>
+              <span class="chip" data-v="Saia"    onclick="selectCat(this)">💃 Saia</span>
+              <span class="chip" data-v="Jaqueta" onclick="selectCat(this)">🧥 Jaqueta</span>
+              <span class="chip" data-v="Acessório" onclick="selectCat(this)">💍 Acessório</span>
+              <span class="chip" data-v="Sapato"  onclick="selectCat(this)">👟 Sapato</span>
+              <span class="chip" data-v="Bolsa"   onclick="selectCat(this)">👜 Bolsa</span>
+              <span class="chip" data-v="Outro"   onclick="selectCat(this)">🏷️ Outro</span>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Tamanho</label>
+              <input id="regSize" type="text" placeholder="P, M, G, 38...">
+            </div>
+            <div class="field">
+              <label>Estado</label>
+              <select id="regCondition">
+                <option>Novo</option><option>Seminovo</option><option>Bom</option><option>Regular</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PRICING -->
+          <div class="pricing-box">
+            <p style="font-size:10px;font-weight:700;opacity:.5;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">Precificação</p>
+            <div class="grid-2" style="margin-bottom:10px;">
+              <div class="field">
+                <label>Valor da Peça (R$)</label>
+                <input id="regPrice" type="number" step="0.01" min="0" placeholder="0,00" oninput="calcPrice()">
+              </div>
+              <div class="field">
+                <label>Comissão (%)</label>
+                <div class="pct-wrap">
+                  <input id="regPct" type="number" step="1" min="0" max="100" placeholder="30" oninput="calcPrice()">
+                  <span class="pct-sym">%</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <p class="pricing-breakdown" id="priceBreakdown">—</p>
+              <div class="price-pill" id="pricePill">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Prazo (dias)</label>
+              <input id="regDeadline" type="number" value="30" min="1">
+            </div>
+            <div class="field">
+              <label>Cliente (opcional)</label>
+              <input id="regClient" type="text" placeholder="Nome do cliente">
+            </div>
+          </div>
+          <div class="field">
+            <label>WhatsApp do Cliente</label>
+            <input id="regPhone" type="tel" placeholder="47999999999">
+          </div>
+        </div>
+
+        <button id="btnSave" class="btn btn-primary" style="margin-top:20px;" onclick="savePiece()">Cadastrar Peça</button>
+        <div id="btnSaving" style="display:none;margin-top:20px;padding:12px;border-radius:14px;background:var(--primary);color:#fff;text-align:center;font-size:13px;font-weight:600;opacity:.7;">Salvando...</div>
+      </div>
+    </section>
+
+    <!-- CLIENTS -->
+    <section id="tab-clients" style="display:none;" class="fade-in">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h2 class="font-display" style="font-size:22px;font-weight:700;">Clientes</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddClient()">+ Novo</button>
+      </div>
+      <div id="clientsList"></div>
+      <div id="clientsEmpty" class="empty" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <p>Nenhum cliente adicionado</p>
+      </div>
+    </section>
+
+    <!-- BILLING -->
+    <section id="tab-billing" style="display:none;" class="fade-in">
+      <h2 class="font-display" style="font-size:22px;font-weight:700;margin-bottom:12px;">Faturamento</h2>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="grid-2">
+            <div class="field"><label>Data Inicial</label><input type="date" id="billDateStart" onchange="renderBilling()"></div>
+            <div class="field"><label>Data Final</label><input type="date" id="billDateEnd" onchange="renderBilling()"></div>
+          </div>
+          <div class="field">
+            <label>Categoria</label>
+            <select id="billCat" onchange="renderBilling()">
+              <option value="">Todas</option>
+              <option>Vestido</option><option>Calça</option><option>Camisa</option><option>Saia</option>
+              <option>Jaqueta</option><option>Acessório</option><option>Sapato</option><option>Bolsa</option><option>Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Cliente</label>
+            <select id="billClient" onchange="renderBilling()"><option value="">Todos</option></select>
+          </div>
+        </div>
+      </div>
+      <div id="billingList"></div>
+      <div id="billingEmpty" class="empty" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>Nenhuma venda no período</p>
+      </div>
+      <div id="billingSummary" style="display:none;">
+        <div style="display:flex;justify-content:space-between;font-weight:600;">
+          <span>Total vendas</span><span id="billTotal">R$ 0,00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.75;margin-top:4px;">
+          <span>Comissão total</span><span id="billComm">R$ 0,00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="tab-alerts" style="display:none;" class="fade-in">
+      <h2 class="font-display" style="font-size:22px;font-weight:700;margin-bottom:12px;">Avisos</h2>
+      <div class="card" style="margin-bottom:12px;">
+        <p style="font-size:10px;font-weight:700;opacity:.5;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;">Adicionar aviso</p>
+        <div style="display:flex;gap:8px;">
+          <input id="customAlertInput" type="text" placeholder="Ex: Revisar peças na sexta..." style="flex:1;padding:9px 12px;border-radius:12px;border:none;outline:none;background:var(--bg);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);">
+          <button onclick="addCustomAlert()" style="padding:9px 14px;border-radius:12px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:18px;">+</button>
+        </div>
+      </div>
+      <div id="alertsList"></div>
+      <div id="alertsEmpty" class="empty" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        <p>Nenhum aviso no momento</p>
+      </div>
+    </section>
+
+  </main>
+</div><!-- #app -->
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-backdrop" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3 class="font-display" id="detailTitle" style="font-size:20px;font-weight:700;"></h3>
+      <button class="btn-ghost" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ── ADD CLIENT MODAL ── -->
+<div class="modal-backdrop" id="clientModal" onclick="if(event.target===this)closeAddClient()">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3 class="font-display" style="font-size:20px;font-weight:700;">Novo Cliente</h3>
+      <button class="btn-ghost" onclick="closeAddClient()">✕</button>
+    </div>
+
+    <!-- Voice for client -->
+    <div style="padding:12px;border-radius:14px;background:var(--bg);margin-bottom:14px;">
+      <p style="font-size:10px;font-weight:700;opacity:.5;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;">Preencher por voz</p>
+      <button id="voiceClientBtn" class="voice-btn" onclick="toggleVoice('client')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span id="voiceClientLabel">Falar nome, telefone e endereço</span>
+        <div class="wave" id="voiceClientWave" style="display:none;">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </button>
+      <div id="voiceClientResult" style="display:none;font-size:11px;margin-top:6px;font-style:italic;opacity:.6;"></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field"><label>Nome</label><input id="cName" type="text" placeholder="Nome completo"></div>
+      <div class="field"><label>Telefone / WhatsApp</label><input id="cPhone" type="tel" placeholder="47999999999"></div>
+      <div class="field"><label>Endereço</label><input id="cAddr" type="text" placeholder="Rua, número, bairro"></div>
+      <div class="field">
+        <label>Pagamento</label>
+        <select id="cPay"><option>Dinheiro</option><option>Cartão</option><option>Pix</option><option>Transferência</option><option>Fiado</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="saveClient()">Salvar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DELETE DIALOG ── -->
+<div class="dialog-backdrop" id="deleteDialog">
+  <div class="dialog">
+    <div style="font-size:32px;margin-bottom:8px;">🗑️</div>
+    <p style="font-weight:600;margin-bottom:4px;">Excluir peça?</p>
+    <p style="font-size:12px;opacity:.5;margin-bottom:20px;">Esta ação não pode ser desfeita.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary" onclick="closeDeleteDialog()" style="flex:1;">Cancelar</button>
+      <button class="btn" id="confirmDeleteBtn" style="flex:1;background:var(--danger);color:#fff;">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="modal-backdrop" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3 class="font-display" style="font-size:20px;font-weight:700;">Configurações</h3>
+      <button class="btn-ghost" onclick="closeSettings()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="field">
+        <label>Nome da Loja</label>
+        <input id="cfgStoreName" type="text" placeholder="Meu Brechó">
+      </div>
+      <div>
+        <p style="font-size:10px;font-weight:700;opacity:.55;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;">Chave API Google Gemini (para IA)</p>
+        <input id="cfgApiKey" class="api-key-input" type="password" placeholder="AIza...">
+        <div style="margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(66,133,244,.08);">
+          <p style="font-size:11px;font-weight:600;color:#1a73e8;margin-bottom:4px;">🆓 100% Gratuito</p>
+          <p style="font-size:11px;opacity:.65;line-height:1.6;">
+            1. Acesse <strong>aistudio.google.com</strong><br>
+            2. Clique em <strong>"Get API Key"</strong> → <strong>"Create API Key"</strong><br>
+            3. Copie e cole aqui.<br>
+            Limite gratuito: <strong>1.500 análises/dia</strong>, sem cartão.
+          </p>
+        </div>
+      </div>
+      <div style="padding:12px;border-radius:12px;background:rgba(184,84,26,.08);">
+        <p style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px;">📱 Voz no Android</p>
+        <p style="font-size:11px;opacity:.6;line-height:1.5;">O reconhecimento de voz só funciona em HTTPS. Para usar offline, abra o arquivo via servidor local ou deploy no Cloudflare Workers.</p>
+      </div>
+      <div style="padding:12px;border-radius:12px;background:var(--bg);">
+        <p style="font-size:11px;font-weight:600;margin-bottom:4px;">💾 Dados</p>
+        <p style="font-size:11px;opacity:.6;margin-bottom:10px;line-height:1.5;"><span id="dataCount">0</span> peças salvas no dispositivo.</p>
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">Exportar JSON</button>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Salvar Configurações</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let DB = JSON.parse(localStorage.getItem('brecho_items') || '[]');
+let CLIENTS = JSON.parse(localStorage.getItem('brecho_clients') || '[]');
+let CUSTOM_ALERTS = JSON.parse(localStorage.getItem('brecho_alerts') || '[]');
+let CFG = JSON.parse(localStorage.getItem('brecho_cfg') || '{}');
+let selectedCat = 'Vestido';
+let currentPhotoB64 = null; // full base64 for AI
+let currentPhotoData = null; // thumbnail for storage
+let isRecordingPiece = false;
+let isRecordingClient = false;
+let recPiece = null;
+let recClient = null;
+let toastTimer = null;
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+(function init() {
+  applyConfig();
+  renderCatalog();
+  renderAlerts();
+  updateBillingClientSelect();
+})();
+
+function applyConfig() {
+  if (CFG.storeName) {
+    document.querySelector('h1').textContent = CFG.storeName;
+    document.title = CFG.storeName;
+  }
+}
+
+function saveDB() {
+  try { localStorage.setItem('brecho_items', JSON.stringify(DB)); } catch(e) { toast('⚠️ Erro ao salvar - localStorage cheio'); }
+}
+
+// ═══════════════════════════════════════════════
+//  TAB NAVIGATION
+// ═══════════════════════════════════════════════
+function showTab(name) {
+  ['catalog','register','clients','billing','alerts'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('active', on);
+    b.style.color = on ? '#fff' : '';
+  });
+  if (name === 'clients') renderClients();
+  if (name === 'billing') renderBilling();
+  if (name === 'alerts') renderAlerts();
+}
+
+// ═══════════════════════════════════════════════
+//  CATEGORY CHIPS
+// ═══════════════════════════════════════════════
+function selectCat(el) {
+  document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  selectedCat = el.dataset.v;
+}
+function selectCatVal(val) {
+  document.querySelectorAll('#catChips .chip').forEach(c => {
+    const on = c.dataset.v === val;
+    c.classList.toggle('on', on);
+    if (on) selectedCat = val;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  PHOTO + AI ANALYSIS
+// ═══════════════════════════════════════════════
+async function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const raw = ev.target.result;
+    const enhanced = await enhancePhoto(raw);
+
+    // Show preview
+    const preview = document.getElementById('photoPreview');
+    const label = document.getElementById('photoLabel');
+    const area = document.getElementById('photoArea');
+    preview.src = enhanced;
+    preview.style.display = 'block';
+    label.style.display = 'none';
+    area.classList.add('has-photo');
+
+    // Store thumbnail (first 500 chars of base64)
+    currentPhotoData = enhanced;
+    // Full base64 for AI (remove data URL prefix)
+    currentPhotoB64 = raw.split(',')[1];
+
+    // AI analysis
+    const apiKey = CFG.apiKey || '';
+    if (!apiKey) {
+      toast('⚙️ Configure a chave Gemini (gratuita) em ⚙️ Configurações');
+      return;
+    }
+
+    document.getElementById('aiOverlay').classList.add('show');
+    document.getElementById('aiResultBar').classList.remove('show');
+
+    try {
+      const result = await analyzePhotoAI(currentPhotoB64, apiKey);
+      document.getElementById('aiOverlay').classList.remove('show');
+      if (result) {
+        if (result.name) { document.getElementById('regName').value = result.name; document.getElementById('regName').classList.add('ai-filled'); }
+        if (result.description) { document.getElementById('regDesc').value = result.description; document.getElementById('regDesc').classList.add('ai-filled'); }
+        if (result.category) selectCatVal(result.category);
+        if (result.size) { document.getElementById('regSize').value = result.size; }
+        if (result.condition) document.getElementById('regCondition').value = result.condition;
+        document.getElementById('aiResultText').textContent = result.summary || ('Identificado: ' + (result.name || 'peça'));
+        document.getElementById('aiResultBar').classList.add('show');
+        toast('✦ IA preencheu os campos!');
+      }
+    } catch(err) {
+      document.getElementById('aiOverlay').classList.remove('show');
+      toast('Erro na IA: ' + (err.message || 'verifique a chave API'));
+    }
+  };
+  reader.readAsDataURL(file);
+  // Reset input so same file can be reselected
+  e.target.value = '';
+}
+
+async function enhancePhoto(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      // Resize to max 800px to save localStorage space
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX/w); w = MAX; }
+        else { w = Math.round(w * MAX/h); h = MAX; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.filter = 'brightness(1.05) contrast(1.1) saturate(1.1)';
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = dataUrl;
+  });
+}
+
+async function analyzePhotoAI(base64, apiKey) {
+  const prompt = `Analise esta foto de peça de brechó. Responda SOMENTE JSON válido sem markdown:
+{"name":"nome curto e atraente","description":"descrição de 1-2 frases: cor, estilo, material","category":"Vestido|Calça|Camisa|Saia|Jaqueta|Acessório|Sapato|Bolsa|Outro","size":"tamanho estimado ou vazio","condition":"Novo|Seminovo|Bom|Regular","summary":"frase curta do que a IA identificou"}`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { inline_data: { mime_type: 'image/jpeg', data: base64 } },
+          { text: prompt }
+        ]}],
+        generationConfig: { maxOutputTokens: 300, temperature: 0.1 }
+      })
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+// ═══════════════════════════════════════════════
+//  VOICE
+// ═══════════════════════════════════════════════
+function toggleVoice(target) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    toast('Voz não suportada neste navegador');
+    return;
+  }
+  if (!location.protocol.startsWith('https') && !location.hostname.includes('localhost') && !location.protocol.startsWith('file')) {
+    toast('⚠️ Voz requer HTTPS');
+    return;
+  }
+
+  if (target === 'piece') {
+    if (isRecordingPiece) { recPiece?.stop(); return; }
+    recPiece = new SR();
+    recPiece.lang = 'pt-BR';
+    recPiece.continuous = false;
+    recPiece.interimResults = false;
+    recPiece.onstart = () => { isRecordingPiece = true; setVoiceUI('piece', true); };
+    recPiece.onresult = e => {
+      const txt = e.results[0][0].transcript;
+      const el = document.getElementById('voicePieceResult');
+      el.textContent = '"' + txt + '"';
+      el.style.display = '';
+      if (!document.getElementById('regDesc').value) document.getElementById('regDesc').value = txt;
+    };
+    recPiece.onerror = e => { toast('Erro de voz: ' + e.error); };
+    recPiece.onend = () => { isRecordingPiece = false; setVoiceUI('piece', false); };
+    recPiece.start();
+  } else {
+    if (isRecordingClient) { recClient?.stop(); return; }
+    recClient = new SR();
+    recClient.lang = 'pt-BR';
+    recClient.continuous = false;
+    recClient.interimResults = false;
+    recClient.onstart = () => { isRecordingClient = true; setVoiceUI('client', true); };
+    recClient.onresult = async e => {
+      const txt = e.results[0][0].transcript;
+      const el = document.getElementById('voiceClientResult');
+      el.textContent = '"' + txt + '"';
+      el.style.display = '';
+      await parseClientVoice(txt);
+    };
+    recClient.onerror = e => { toast('Erro de voz: ' + e.error); };
+    recClient.onend = () => { isRecordingClient = false; setVoiceUI('client', false); };
+    recClient.start();
+  }
+}
+
+function setVoiceUI(target, on) {
+  const suffix = target === 'piece' ? 'Piece' : 'Client';
+  const btn = document.getElementById('voice'+suffix+'Btn');
+  const lbl = document.getElementById('voice'+suffix+'Label');
+  const wave = document.getElementById('voice'+suffix+'Wave');
+  btn.classList.toggle('recording', on);
+  lbl.style.display = on ? 'none' : '';
+  wave.style.display = on ? 'flex' : 'none';
+}
+
+async function parseClientVoice(text) {
+  const apiKey = CFG.apiKey || '';
+  if (!apiKey) {
+    // Fallback: put text in name
+    document.getElementById('cName').value = text;
+    return;
+  }
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Extraia dados de cliente do texto falado. Retorne SOMENTE JSON válido sem markdown: {"name":"nome completo","phone":"apenas dígitos","address":"endereço completo"}. Texto: "${text}"` }] }],
+          generationConfig: { maxOutputTokens: 150, temperature: 0 }
+        })
+      }
+    );
+    const data = await res.json();
+    const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/```json|```/g,'').trim() || '{}');
+    if (parsed.name) document.getElementById('cName').value = parsed.name;
+    if (parsed.phone) document.getElementById('cPhone').value = parsed.phone;
+    if (parsed.address) document.getElementById('cAddr').value = parsed.address;
+    toast('✦ Dados extraídos pela IA!');
+  } catch {
+    document.getElementById('cName').value = text;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  PRICING
+// ═══════════════════════════════════════════════
+function calcPrice() {
+  const price = parseFloat(document.getElementById('regPrice').value) || 0;
+  const pct   = parseFloat(document.getElementById('regPct').value)   || 0;
+  const comm  = price * pct / 100;
+  const total = price + comm;
+  document.getElementById('pricePill').textContent = 'R$ ' + fmt(total);
+  document.getElementById('priceBreakdown').textContent = price > 0 && pct > 0
+    ? `R$ ${fmt(price)} + ${pct}% = R$ ${fmt(comm)}`
+    : '—';
+}
+
+function fmt(n) { return n.toFixed(2).replace('.', ','); }
+
+// ═══════════════════════════════════════════════
+//  SAVE PIECE
+// ═══════════════════════════════════════════════
+async function savePiece() {
+  const name = document.getElementById('regName').value.trim();
+  if (!name) { toast('Informe o nome da peça'); return; }
+
+  document.getElementById('btnSave').style.display = 'none';
+  document.getElementById('btnSaving').style.display = '';
+
+  const price = parseFloat(document.getElementById('regPrice').value) || 0;
+  const pct   = parseFloat(document.getElementById('regPct').value)   || 0;
+  const comm  = price * pct / 100;
+
+  const item = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    name,
+    description: document.getElementById('regDesc').value.trim(),
+    category: selectedCat,
+    size: document.getElementById('regSize').value.trim(),
+    condition: document.getElementById('regCondition').value,
+    price, pct, commission: comm,
+    sale_price: price + comm,
+    deadline_days: parseInt(document.getElementById('regDeadline').value) || 30,
+    client_name: document.getElementById('regClient').value.trim(),
+    client_phone: document.getElementById('regPhone').value.trim(),
+    photo: currentPhotoData || '',
+    status: 'disponível',
+    created_at: new Date().toISOString(),
+    sold_at: ''
+  };
+
+  // Try to save - if localStorage is full, strip photo
+  try {
+    DB.push(item);
+    saveDB();
+  } catch(e) {
+    item.photo = '';
+    DB[DB.length-1] = item;
+    try { saveDB(); } catch(e2) { toast('Erro: armazenamento cheio'); DB.pop(); }
+  }
+
+  await new Promise(r => setTimeout(r, 300)); // small delay for UX
+
+  document.getElementById('btnSave').style.display = '';
+  document.getElementById('btnSaving').style.display = 'none';
+
+  toast('✨ Peça cadastrada com sucesso!');
+  resetForm();
+  renderCatalog();
+  renderAlerts();
+  showTab('catalog');
+}
+
+function resetForm() {
+  ['regName','regDesc','regSize','regPrice','regPct','regClient','regPhone'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('ai-filled');
+  });
+  document.getElementById('regDeadline').value = '30';
+  document.getElementById('regCondition').value = 'Novo';
+  document.getElementById('pricePill').textContent = 'R$ 0,00';
+  document.getElementById('priceBreakdown').textContent = '—';
+  const preview = document.getElementById('photoPreview');
+  preview.src = ''; preview.style.display = 'none';
+  document.getElementById('photoLabel').style.display = '';
+  document.getElementById('photoArea').classList.remove('has-photo');
+  document.getElementById('aiResultBar').classList.remove('show');
+  document.getElementById('voicePieceResult').style.display = 'none';
+  selectCatVal('Vestido');
+  currentPhotoB64 = null;
+  currentPhotoData = null;
+}
+
+// ═══════════════════════════════════════════════
+//  CATALOG
+// ═══════════════════════════════════════════════
+function renderCatalog() {
+  const search = (document.getElementById('searchInput').value || '').toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+
+  let items = DB.filter(i => {
+    if (search && !i.name.toLowerCase().includes(search) && !(i.description||'').toLowerCase().includes(search)) return false;
+    if (cat && i.category !== cat) return false;
+    return true;
+  });
+
+  const grid = document.getElementById('catalogGrid');
+  const empty = document.getElementById('catalogEmpty');
+
+  if (items.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = '';
+  items.forEach((item, i) => {
+    const daysAgo = Math.floor((Date.now() - new Date(item.created_at).getTime()) / 86400000);
+    const remaining = (item.deadline_days || 30) - daysAgo;
+    let badge = '';
+    if (item.status === 'vendida') badge = '<span class="badge badge-success">Vendida</span>';
+    else if (remaining <= 0) badge = '<span class="badge badge-danger">Vencida</span>';
+    else if (remaining <= 5) badge = `<span class="badge badge-warn">${remaining}d</span>`;
+
+    const card = document.createElement('div');
+    card.className = 'catalog-card slide-in';
+    card.style.animationDelay = (i*0.04)+'s';
+    card.onclick = () => openDetail(item.id);
+
+    const thumbContent = item.photo
+      ? `<img src="${item.photo}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">`
+      : catEmoji(item.category);
+
+    card.innerHTML = `
+      <div class="catalog-card-thumb">
+        ${thumbContent}
+        ${item.pct > 0 ? `<span class="pct-badge">+${item.pct}%</span>` : ''}
+      </div>
+      <div class="catalog-card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
+          <p class="catalog-card-name">${item.name}</p>
+          ${badge}
+        </div>
+        <p class="catalog-card-sub">${item.category} · ${item.size || '-'}</p>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;">
+          <p class="catalog-card-price">R$ ${fmt(item.sale_price||0)}</p>
+          ${item.price !== item.sale_price && item.price > 0 ? `<p class="catalog-card-original">R$ ${fmt(item.price)}</p>` : ''}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function catEmoji(cat) {
+  return ({'Vestido':'👗','Calça':'👖','Camisa':'👔','Saia':'💃','Jaqueta':'🧥','Acessório':'💍','Sapato':'👟','Bolsa':'👜','Outro':'🏷️'}[cat] || '🏷️');
+}
+
+// ═══════════════════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════════════════
+function openDetail(id) {
+  const item = DB.find(i => i.id === id);
+  if (!item) return;
+
+  document.getElementById('detailTitle').textContent = item.name;
+  const daysAgo = Math.floor((Date.now() - new Date(item.created_at).getTime()) / 86400000);
+  const remaining = (item.deadline_days||30) - daysAgo;
+  const sCls = remaining<=0 ? 'badge-danger' : remaining<=5 ? 'badge-warn' : 'badge-success';
+  const sTxt = remaining<=0 ? 'Prazo vencido' : remaining+' dias restantes';
+  const phone = (item.client_phone||'').replace(/\D/g,'');
+  const waMsg = encodeURIComponent('Olá! Tenho uma peça que pode te interessar no brechó!');
+
+  const thumbContent = item.photo
+    ? `<img src="${item.photo}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:16px;">`
+    : `<span style="font-size:60px;">${catEmoji(item.category)}</span>`;
+
+  document.getElementById('detailContent').innerHTML = `
+    <div style="width:100%;height:200px;border-radius:16px;background:linear-gradient(135deg,var(--bg),#EDE8E1);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:16px;">
+      ${thumbContent}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Categoria</span><span style="font-size:12px;font-weight:500;">${item.category}</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Tamanho</span><span style="font-size:12px;font-weight:500;">${item.size||'-'}</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Estado</span><span style="font-size:12px;font-weight:500;">${item.condition}</span></div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Valor da Peça</span><span style="font-size:12px;font-weight:500;">R$ ${fmt(item.price||0)}</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Comissão</span><span style="font-size:12px;font-weight:500;">${item.pct||0}% → R$ ${fmt(item.commission||0)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;opacity:.5;">Valor de Venda</span><div class="price-pill" style="font-size:16px;padding:5px 14px;">R$ ${fmt(item.sale_price||0)}</div></div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;opacity:.5;">Prazo</span><span class="badge ${sCls}" style="font-size:11px;padding:4px 10px;">${sTxt}</span></div>
+      ${item.description ? `<div><span style="font-size:12px;opacity:.5;">Descrição</span><p style="font-size:12px;margin-top:4px;line-height:1.5;">${item.description}</p></div>` : ''}
+      ${item.client_name ? `<div style="display:flex;justify-content:space-between;"><span style="font-size:12px;opacity:.5;">Cliente</span><span style="font-size:12px;font-weight:500;">${item.client_name}</span></div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;">
+      ${phone ? `<a href="https://wa.me/55${phone}?text=${waMsg}" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:14px;background:#25D366;color:#fff;text-decoration:none;font-size:13px;font-weight:600;">💬 WhatsApp</a>` : ''}
+      <button onclick="markSold('${id}')" style="flex:1;padding:11px;border-radius:14px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;">${item.status==='vendida'?'✓ Vendida':'Marcar Vendida'}</button>
+      <button onclick="openDeleteDialog('${id}')" style="padding:11px 14px;border-radius:14px;background:var(--bg);border:none;cursor:pointer;font-size:18px;">🗑️</button>
+    </div>`;
+
+  document.getElementById('detailModal').classList.add('show');
+}
+
+function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+
+function markSold(id) {
+  const item = DB.find(i => i.id === id);
+  if (!item || item.status === 'vendida') return;
+  item.status = 'vendida';
+  item.sold_at = new Date().toISOString();
+  saveDB();
+  toast('🎉 Peça vendida!');
+  closeDetail();
+  renderCatalog();
+  renderAlerts();
+}
+
+// ═══════════════════════════════════════════════
+//  DELETE
+// ═══════════════════════════════════════════════
+function openDeleteDialog(id) {
+  document.getElementById('deleteDialog').classList.add('show');
+  document.getElementById('confirmDeleteBtn').onclick = () => {
+    DB = DB.filter(i => i.id !== id);
+    saveDB();
+    toast('Peça excluída');
+    document.getElementById('deleteDialog').classList.remove('show');
+    closeDetail();
+    renderCatalog();
+    renderAlerts();
+  };
+}
+function closeDeleteDialog() { document.getElementById('deleteDialog').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════
+//  CLIENTS
+// ═══════════════════════════════════════════════
+function renderClients() {
+  const list = document.getElementById('clientsList');
+  const empty = document.getElementById('clientsEmpty');
+
+  // Build client map from items + standalone clients
+  const map = new Map();
+  DB.forEach(i => {
+    if (!i.client_name) return;
+    if (!map.has(i.client_name)) map.set(i.client_name, { phone: i.client_phone, items: [] });
+    map.get(i.client_name).items.push(i);
+  });
+  CLIENTS.forEach(c => {
+    if (!map.has(c.name)) map.set(c.name, { phone: c.phone, address: c.address, payment: c.payment, items: [] });
+  });
+
+  if (map.size === 0) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+
+  map.forEach((val, name) => {
+    const phone = (val.phone||'').replace(/\D/g,'');
+    const waMsg = encodeURIComponent('Olá! Temos novidades no brechó!');
+    const card = document.createElement('div');
+    card.className = 'card slide-in';
+    card.style.padding = '12px';
+    card.style.marginBottom = '8px';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="avatar">${name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:600;">${name}</p>
+          <p style="font-size:11px;opacity:.45;margin-top:1px;">${val.items.length} peça(s)${val.phone?' · '+val.phone:''}${val.payment?' · '+val.payment:''}</p>
+          ${val.address?`<p style="font-size:11px;opacity:.4;">${val.address}</p>`:''}
+        </div>
+        ${phone?`<a href="https://wa.me/55${phone}?text=${waMsg}" target="_blank" style="width:36px;height:36px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-size:16px;flex-shrink:0;">💬</a>`:''}
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function openAddClient() { document.getElementById('clientModal').classList.add('show'); }
+function closeAddClient() { document.getElementById('clientModal').classList.remove('show'); resetClientForm(); }
+function resetClientForm() {
+  ['cName','cPhone','cAddr'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cPay').value = 'Dinheiro';
+  document.getElementById('voiceClientResult').style.display = 'none';
+}
+
+function saveClient() {
+  const name = document.getElementById('cName').value.trim();
+  if (!name) { toast('Informe o nome'); return; }
+  CLIENTS.push({ name, phone: document.getElementById('cPhone').value.trim(), address: document.getElementById('cAddr').value.trim(), payment: document.getElementById('cPay').value });
+  localStorage.setItem('brecho_clients', JSON.stringify(CLIENTS));
+  toast('👤 Cliente salvo!');
+  closeAddClient();
+  renderClients();
+  updateBillingClientSelect();
+}
+
+// ═══════════════════════════════════════════════
+//  BILLING
+// ═══════════════════════════════════════════════
+function updateBillingClientSelect() {
+  const sel = document.getElementById('billClient');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>';
+  const names = new Set(DB.filter(i=>i.client_name).map(i=>i.client_name));
+  names.forEach(n => { const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  sel.value = cur;
+}
+
+function renderBilling() {
+  const dateStart = document.getElementById('billDateStart').value;
+  const dateEnd   = document.getElementById('billDateEnd').value;
+  const cat       = document.getElementById('billCat').value;
+  const client    = document.getElementById('billClient').value;
+
+  let items = DB.filter(i => i.status === 'vendida');
+  if (dateStart) items = items.filter(i => new Date(i.sold_at) >= new Date(dateStart));
+  if (dateEnd)   items = items.filter(i => new Date(i.sold_at) <= new Date(dateEnd+'T23:59:59'));
+  if (cat)       items = items.filter(i => i.category === cat);
+  if (client)    items = items.filter(i => i.client_name === client);
+
+  const list  = document.getElementById('billingList');
+  const empty = document.getElementById('billingEmpty');
+  const summ  = document.getElementById('billingSummary');
+
+  if (items.length === 0) { list.innerHTML=''; empty.style.display=''; summ.style.display='none'; return; }
+  empty.style.display = 'none';
+
+  let totalSale=0, totalComm=0;
+  list.innerHTML = '';
+  items.forEach((item,i) => {
+    totalSale += item.sale_price||0;
+    totalComm += item.commission||0;
+    const d = new Date(item.sold_at).toLocaleDateString('pt-BR');
+    const row = document.createElement('div');
+    row.className = 'card slide-in';
+    row.style.padding = '12px';
+    row.style.marginBottom = '8px';
+    row.style.animationDelay = (i*.04)+'s';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:28px;flex-shrink:0;">${catEmoji(item.category)}</div>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:600;">${item.name}</p>
+          <p style="font-size:11px;opacity:.45;">${item.category} · ${d}${item.client_name?' · '+item.client_name:''}</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <p style="font-size:10px;opacity:.4;">Peça: R$ ${fmt(item.price||0)}</p>
+          ${item.pct?`<p style="font-size:10px;opacity:.4;">+${item.pct}% = R$ ${fmt(item.commission||0)}</p>`:''}
+          <p style="font-size:14px;font-weight:700;color:var(--primary);">R$ ${fmt(item.sale_price||0)}</p>
+        </div>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  document.getElementById('billTotal').textContent = 'R$ ' + fmt(totalSale);
+  document.getElementById('billComm').textContent  = 'R$ ' + fmt(totalComm);
+  summ.style.display = '';
+}
+
+// ═══════════════════════════════════════════════
+//  ALERTS
+// ═══════════════════════════════════════════════
+function renderAlerts() {
+  const list  = document.getElementById('alertsList');
+  const empty = document.getElementById('alertsEmpty');
+  const alerts = [];
+
+  DB.forEach(i => {
+    if (i.status === 'vendida') return;
+    const daysAgo = Math.floor((Date.now() - new Date(i.created_at).getTime()) / 86400000);
+    const rem = (i.deadline_days||30) - daysAgo;
+    if (rem <= 0) alerts.push({ cls:'badge-danger', icon:'⏰', text:`"${i.name}" passou do prazo (${Math.abs(rem)}d atrás)`, id: i.id });
+    else if (rem <= 5) alerts.push({ cls:'badge-warn', icon:'⚠️', text:`"${i.name}" vence em ${rem} dia(s)`, id: i.id });
+    if (daysAgo >= 15) alerts.push({ cls:'badge-info', icon:'📦', text:`"${i.name}" parada há ${daysAgo} dias`, id: i.id });
+  });
+  CUSTOM_ALERTS.forEach(a => alerts.push({ cls:'badge-info', icon:'🔔', text:a, id:null }));
+
+  const badge = document.getElementById('alertBadge');
+  const dc = alerts.filter(a=>a.cls==='badge-danger').length;
+  badge.style.display = dc>0 ? 'flex' : 'none';
+  badge.textContent = dc;
+
+  if (alerts.length === 0) { list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+  alerts.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'alert-item ' + a.cls;
+    el.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:8px;flex:1;">
+        <span>${a.icon}</span>
+        <span>${a.text}</span>
+      </div>
+      ${a.id
+        ? `<button onclick="openDetail('${a.id}')">Ver</button>`
+        : `<button onclick="removeCustomAlert('${a.text}')">✕</button>`}`;
+    list.appendChild(el);
+  });
+}
+
+function addCustomAlert() {
+  const input = document.getElementById('customAlertInput');
+  const txt = input.value.trim();
+  if (!txt) { toast('Digite um aviso'); return; }
+  CUSTOM_ALERTS.push(txt);
+  localStorage.setItem('brecho_alerts', JSON.stringify(CUSTOM_ALERTS));
+  input.value = '';
+  toast('📌 Aviso adicionado!');
+  renderAlerts();
+}
+
+function removeCustomAlert(text) {
+  CUSTOM_ALERTS = CUSTOM_ALERTS.filter(a => a !== text);
+  localStorage.setItem('brecho_alerts', JSON.stringify(CUSTOM_ALERTS));
+  renderAlerts();
+}
+
+// ═══════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('cfgStoreName').value = CFG.storeName || 'Meu Brechó';
+  document.getElementById('cfgApiKey').value = CFG.apiKey || '';
+  document.getElementById('dataCount').textContent = DB.length;
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+
+function saveSettings() {
+  CFG.storeName = document.getElementById('cfgStoreName').value.trim() || 'Meu Brechó';
+  CFG.apiKey = document.getElementById('cfgApiKey').value.trim();
+  localStorage.setItem('brecho_cfg', JSON.stringify(CFG));
+  applyConfig();
+  closeSettings();
+  toast('✅ Configurações salvas!');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ items: DB, clients: CLIENTS }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'brecho_backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
